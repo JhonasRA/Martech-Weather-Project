@@ -23,7 +23,7 @@ def ejecutar_logica_martech(ciudad="Lima"):
         if temperatura < 18:
             oferta = "Seguro de Salud - Plan Invierno ❄️"
         else:
-            oferta = "Crédito Vehicular - Promoción Verano ☀️"
+            oferta = "Llevate un pack playero - Promoción Verano ☀️"
             
         return f"Dato: {ciudad} a {temperatura}°C. Acción: Ofrecer {oferta}"
 
