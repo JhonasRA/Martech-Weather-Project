@@ -1,5 +1,6 @@
 import os
 import requests
+import csv
 from dotenv import load_dotenv
 
 # Lee el archivo .env
@@ -52,17 +53,59 @@ def obtener_estrategia_marketing(temperatura):
     }
     
 if __name__ == "__main__":
-    # Pedimos al usuario que ingrese una ciudad
-    ciudad = input("Ingrese el nombre de una ciudad en Perú: ")
-    resultado = ejecutar_logica_martech(ciudad)
+    # 1. Definimos nuestro "Target" (Las ciudades donde tenemos clientes)
+    ciudades_bcp = ["Lima", "Cusco", "Piura", "Arequipa", "Iquitos"]
+    
+    # 2. Creamos un contenedor para los resultados de la campaña
+    reporte_final = []
 
-    # Si la respuesta es un error, lo mostramos
-    if isinstance(resultado, str):
-        print(resultado)
-    # Si la respuesta es un diccionario, seguimos con la lógica de marketing
-    else:
-        print(f"Temperatura actual en {resultado['ciudad']}: {resultado['temperatura']}°C")
-        estrategia = obtener_estrategia_marketing(resultado['temperatura'])
-        print(f"Segmento: {estrategia['segmento']}")
-        print(f"Oferta Principal: {estrategia['oferta_principal']}")
-        print(f"Color recomendado para la interfaz: {estrategia['color_interfaz']}")
+    print("🚀 Iniciando procesamiento de campaña regional...\n")
+
+    for ciudad in ciudades_bcp:
+        # Reutilizamos tu función de API
+        datos_clima = ejecutar_logica_martech(ciudad)
+
+        if datos_clima["status"] == "ok":
+            temp = datos_clima["temperatura"]
+            # Reutilizamos tu lógica de negocio
+            estrategia = obtener_estrategia_marketing(temp)
+            
+            # Guardamos la info estructurada
+            resultado = {
+                "Ciudad": ciudad,
+                "Temperatura": temp,
+                "Segmento": estrategia["segmento"],
+                "Oferta": estrategia["oferta_principal"]
+            }
+            reporte_final.append(resultado)
+            print(f"✅ Procesado: {ciudad} ({temp}°C) -> {estrategia['segmento']}")
+        else:
+            print(f"❌ Error en {ciudad}: {datos_clima['mensaje']}")
+
+    # 3. Resumen Ejecutivo (Lo que le enviarías a tu jefe)
+    print("\n" + "="*50)
+    print("📊 RESUMEN DE CAMPAÑA - ACCIONES DISPONIBLES")
+    print("="*50)
+    for item in reporte_final:
+        print(f"📍 {item['Ciudad']}: Enviar '{item['Oferta']}'")
+    
+    # --- 2. CREACIÓN DEL ARCHIVO CSV ---
+    nombre_archivo = "campaña_clima_bcp.csv"
+    columnas = ["Ciudad", "Temperatura", "Segmento", "Oferta"]
+
+    try:
+        with open(nombre_archivo, mode="w", newline="", encoding="utf-8") as archivo:
+            # Creamos el escritor de CSV basado en diccionarios
+            escritor = csv.DictWriter(archivo, fieldnames=columnas)
+            
+            # Escribimos el encabezado (la primera fila)
+            escritor.writeheader()
+            
+            # Escribimos todas las filas de nuestro reporte
+            escritor.writerows(reporte_final)
+            
+        print(f"\n✅ ¡Éxito! Se ha generado el archivo: {nombre_archivo}")
+        print(f"📂 Ubicación: {os.getcwd()}")
+        
+    except Exception as e:
+        print(f"❌ Error al guardar el CSV: {e}")
